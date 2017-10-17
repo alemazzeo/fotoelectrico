@@ -32,12 +32,7 @@ def ajusta_monocromatica(v_ret, v_foto, x0, p=1):
     popt, pcov = curve_fit(sol_monocromatica, v_ret, v_foto,
                            p0=params, bounds=(lower, upper))
 
-    fig, ax = plt.subplots(1)
-    ax.plot(v_ret, v_foto)
-    # ax.plot(v_ret, a * v_ret + b)
-    ax.plot(v_ret, sol_monocromatica(v_ret, *popt))
-
-    return params, upper, lower, popt
+    return popt
 
 
 def ver_medicion(nombre):
@@ -68,7 +63,7 @@ def ver_juntos(nombre, espectro=''):
 
 def ver_led_blanco():
     fig, ax = plt.subplots(2)
-    for i in range(12, 21):
+    for i in range(14, 21):
         v_ret, v_foto = mediciones[str(i)]
         long_onda, intensidad = espectros[str(i)]
 
