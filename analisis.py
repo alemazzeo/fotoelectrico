@@ -61,6 +61,17 @@ def ver_juntos(nombre, espectro=''):
     ax[1].plot(long_onda, intensidad)
 
 
+def ver_led_azul():
+    fig, ax = plt.subplots(2)
+    for i in range(5, 9):
+        v_ret, v_foto = mediciones['0' + str(i)]
+        long_onda, intensidad = espectros['0' + str(i) + 'A']
+
+        ax[0].plot(v_ret, v_foto)
+        ax[1].plot(long_onda, intensidad)
+        # ax[1].set_xlim(ventana_espectros[str(i)])
+
+
 def ver_led_blanco():
     fig, ax = plt.subplots(2)
     for i in range(14, 21):
@@ -78,4 +89,23 @@ def ver_barrido_led():
         v_ret, v_foto = mediciones['10']
         long_onda, intensidad = espectros['10' + letra]
         ax[0].plot(v_ret, v_foto[i])
+        ax[1].plot(long_onda, intensidad)
+
+
+def ver_barrido_led2():
+    fig, ax = plt.subplots(2)
+    for i, letra in enumerate(['A', 'B', 'C']):
+        v_ret, v_foto = mediciones['11']
+        long_onda, intensidad = espectros['11' + letra]
+        ax[0].plot(v_ret, v_foto[i])
+        ax[1].plot(long_onda, intensidad)
+
+
+def ver_variacion_temporal():
+    fig, ax = plt.subplots(2)
+    for i in range(0, 6):
+        v_ret, v_foto = mediciones['0' + str(i)]
+        long_onda, intensidad = espectros['0' + str(i) + 'A']
+
+        ax[0].plot(v_ret, v_foto)
         ax[1].plot(long_onda, intensidad)
