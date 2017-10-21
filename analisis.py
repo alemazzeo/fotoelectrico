@@ -15,32 +15,14 @@ def sol_monocromatica(v_ret, v_ret0, m, offset=1.5e-6):
     return (v_ret - v_ret0) * m * (v_ret > v_ret0) + offset
 
 
-def ajusta_recta(v_ret, v_foto, x0):
-    x = v_ret[v_ret > x0]
-    y = v_foto[v_ret > x0]
-    a, b = np.polyfit(x, y, 1)
-    return a, b
-
-
-def ajuste(x, y, xmin, xmax, grado=3):
-    assert xmin < xmax
-    mask = (x < xmax) * (x > xmin)
-    p = np.polyfit(x[mask], y[mask], grado)
+def ajuste(v_ret, v_foto, xmin, xmax):
+    mask = (v_ret < xmax) * (v_ret > xmin)
+    x = v_ret[mask]
+    y = v_foto[mask]
+    p = np.polyfit(x, y, 10)
     pol = np.poly1d(p)
-    return pol
-
-
-def ajusta_monocromatica(v_ret, v_foto, x0, p=1):
-    a, b = ajusta_recta(v_ret, v_foto, x0)
-
-    params = np.asarray([(1.6e-6 - b) / a, a, 1.6e-6])
-    upper = np.sign(params) * np.abs(params) * (1 + p)
-    lower = np.sign(params) * np.abs(params) * (1 - p)
-
-    popt, pcov = curve_fit(sol_monocromatica, v_ret, v_foto,
-                           p0=params, bounds=(lower, upper))
-
-    return popt
+    r = pol.r
+    return pol, r
 
 
 def ver_medicion(nombre):
