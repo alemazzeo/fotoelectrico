@@ -22,6 +22,14 @@ def ajusta_recta(v_ret, v_foto, x0):
     return a, b
 
 
+def ajuste(x, y, xmin, xmax, grado=3):
+    assert xmin < xmax
+    mask = (x < xmax) * (x > xmin)
+    p = np.polyfit(x[mask], y[mask], grado)
+    pol = np.poly1d(p)
+    return pol
+
+
 def ajusta_monocromatica(v_ret, v_foto, x0, p=1):
     a, b = ajusta_recta(v_ret, v_foto, x0)
 
