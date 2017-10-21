@@ -37,7 +37,7 @@ for path, subdirs, files in os.walk('.'):
             elif m == 10:
                 X, Y = np.load(ruta)
                 V = np.linspace(-2.0, 2.0, 101)
-                x = np.asarray([corrige_fase(X[i], Y[i]) for i in range(5)])
+                x = np.asarray([corrige_fase(X[i], Y[i]) for i in range(1,5)])
 
             elif m == 11:
                 X, Y = np.load(ruta)
