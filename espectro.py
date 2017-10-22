@@ -84,7 +84,7 @@ for medicion, espectro in zip(mediciones_blanco, espectros_blanco):
     ax[0].plot(v_ret, v_foto, marker='o', ls='')
     ax[1].plot(long_onda, intensidad, color='k', ls='--', lw=0.5, )
 
-    s = sensibilidad()(long_onda)
+    s = sensibilidad()(long_onda + 50)
     h = intensidad * s
 
     ax[1].plot(long_onda, s * 0.15, color='k')
