@@ -11,7 +11,6 @@ from scipy.interpolate import InterpolatedUnivariateSpline as spline
 import matplotlib.pyplot as plt
 
 from analisis import mediciones, espectros, ventana_espectros
-from analisis import ajuste
 
 plt.ion()
 
@@ -22,6 +21,14 @@ fig, ax = plt.subplots(2)
 
 areas = []
 pendientes = []
+
+
+def ajuste(x, y, xmin, xmax, grado=3):
+    assert xmin < xmax
+    mask = (x < xmax) * (x > xmin)
+    p = np.polyfit(x[mask], y[mask], grado)
+    pol = np.poly1d(p)
+    return pol
 
 
 def sensibilidad(smooth=0.001, plot=False):
@@ -80,7 +87,7 @@ for medicion, espectro in zip(mediciones_blanco, espectros_blanco):
     s = sensibilidad()(long_onda)
     h = intensidad * s
 
-#    ax[1].plot(long_onda, s * 0.15)
+    ax[1].plot(long_onda, s * 0.15, color='k')
     ax[1].plot(long_onda, h)
 
     area = np.trapz(h)
