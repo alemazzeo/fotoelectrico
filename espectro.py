@@ -3,7 +3,6 @@
 import matplotlib
 matplotlib.use('Qt5Agg')
 
-from cycler import cycler
 import numpy as np
 from scipy import signal
 from scipy.optimize import curve_fit
@@ -12,15 +11,39 @@ import matplotlib.pyplot as plt
 
 from analisis import mediciones, espectros, ventana_espectros
 
+# CONFIGURACIONES POR DEFECTO
+
+# Figura (tamaño)
+plt.rc('figure', figsize=(8, 6))
+
+# Ticks (tamaño de la fuente)
+plt.rc(('xtick', 'ytick'), labelsize=14)
+
+# Bordes de la figura (visibles o no)
+plt.rc('axes.spines', left=True, bottom=True, top=False, right=False)
+
+# Leyenda (tamaño de la fuenta y ubicación)
+plt.rc('legend', fontsize=14, loc='best')
+
+# Ejes (tamaño de la fuente)
+plt.rc('axes', labelsize=15)
+
 plt.ion()
 
-mediciones_blanco = [mediciones[str(i)] for i in range(14, 19)]
-espectros_blanco = [espectros[str(i)] for i in range(14, 19)]
+# DATOS
 
-fig, ax = plt.subplots(2)
+v_ret = mediciones['14'][0]
+long_onda = espectros['14'][0]
 
-areas = []
-pendientes = []
+lmin, lmax = [400, 700]
+mask = (long_onda > lmin) * (long_onda < lmax)
+long_onda = long_onda[mask]
+
+v_foto = [mediciones[str(i)][1] * 1e6 for i in range(14, 19)]
+intensidad = [espectros[str(i)][1][mask] - 0.01 for i in range(14, 19)]
+intensidad = [x * (x > 0.0) for x in intensidad]
+
+# FUNCIONES
 
 
 def ajuste(x, y, xmin, xmax, grado=3):
@@ -31,88 +54,86 @@ def ajuste(x, y, xmin, xmax, grado=3):
     return pol
 
 
-def sensibilidad(smooth=0.001, plot=False):
-    puntos = np.asarray([[300, 0.08],
-                         [320, 0.24],
-                         [330, 0.60],
-                         [340, 0.76],
-                         [352, 0.88],
-                         [370, 0.94],
-                         [405, 1.00],
-                         [440, 0.94],
-                         [460, 0.88],
-                         [480, 0.80],
-                         [500, 0.68],
-                         [600, 0.12],
-                         [610, 0.07],
-                         [630, 0.04],
-                         [650, 0.02],
-                         [670, 0.01],
-                         [700, 0.00],
-                         [710, 0.00],
-                         [720, 0.00],
-                         [730, 0.00],
-                         [740, 0.00],
-                         [750, 0.00],
-                         [800, 0.00],
-                         [900, 0.00]])
+def sensibilidad(long_onda, inicio=300, fin=700,
+                 smooth=0.001, plot=False):
+    puntos = np.asarray([[300, 0.08], [320, 0.24], [330, 0.60],
+                         [340, 0.76], [352, 0.88], [370, 0.94],
+                         [405, 1.00], [440, 0.94], [460, 0.88],
+                         [480, 0.80], [500, 0.68], [600, 0.12],
+                         [610, 0.07], [630, 0.04], [650, 0.02],
+                         [670, 0.01], [700, 0.00], [710, 0.00],
+                         [720, 0.00], [730, 0.00], [740, 0.00],
+                         [750, 0.00], [800, 0.00], [900, 0.00]])
 
     s = spline(puntos.T[0], puntos.T[1])
     s.set_smoothing_factor(smooth)
+    a = long_onda[0] + 300 - inicio
+    b = long_onda[-1] + 700 - fin
+    x = np.linspace(a, b, len(long_onda))
+
     if plot:
         fig, ax = plt.subplots(1)
-        x = np.linspace(300, 700)
         ax.plot(puntos.T[0], puntos.T[1], 'o')
         ax.plot(x, s(x))
+        ax.plot(long_onda, s(x), 'k')
 
-    return s
-
-
-for medicion, espectro in zip(mediciones_blanco, espectros_blanco):
-    v_ret, v_foto = medicion
-    long_onda, intensidad = espectro
-
-    lmin, lmax = [400, 700]
-    mask = (long_onda > lmin) * (long_onda < lmax)
-
-    long_onda = long_onda[mask]
-    intensidad = intensidad[mask]
-
-    pol = ajuste(v_ret, v_foto, xmin=1.5, xmax=np.inf, grado=1)
-
-    ax[0].plot(v_ret, pol(v_ret), color='k', ls=':')
-    ax[0].plot(v_ret, v_foto, marker='o', ls='')
-    ax[1].plot(long_onda, intensidad, color='k', ls='--', lw=0.5, )
-
-    s = sensibilidad()(long_onda + 50)
-    h = intensidad * s
-
-    ax[1].plot(long_onda, s * 0.15, color='k')
-    ax[1].plot(long_onda, h)
-
-    area = np.trapz(h)
-    pendiente = pol[1] * 1e6
-
-    areas.append(area)
-    pendientes.append(pendiente)
-
-    print('Area: {:f}\nPendiente: {:f}\n\n'.format(area, pendiente))
-
-ax[0].set_xlim(-1.0, 2.0)
-ax[0].set_ylim(-1e-6, 2.5e-5)
+    return s(x)
 
 
-fig, ax = plt.subplots(2)
+def plot_pendientes(ax=None):
 
-for medicion, espectro in zip(mediciones_blanco, espectros_blanco):
-    v_ret, v_foto = medicion
-    long_onda, intensidad = espectro
+    if ax is None:
+        fig, ax = plt.subplots(1)
 
-    pol = ajuste(v_ret, v_foto, xmin=0, xmax=2.0, grado=10)
+    pendientes = list()
 
-    ax[0].plot(v_ret, pol(v_ret), color='k', ls=':')
-    ax[0].plot(v_ret, v_foto, marker='o', ls='')
-    ax[1].plot(long_onda, intensidad)
+    for i in range(5):
+        ax.plot(v_ret, v_foto[i], ls='', marker='o')
+        recta = ajuste(v_ret, v_foto[i], xmin=1.6, xmax=np.inf, grado=1)
+        ax.plot(v_ret, recta(v_ret), color='k', ls=':')
+        pendientes.append(recta[1])
 
-ax[0].set_xlim(-0.2, 2.0)
-ax[0].set_ylim(-1e-6, 2.5e-5)
+        texto = r'a={:05.2f}, b={:3.2f}'.format(recta[1], recta[0])
+        ax.annotate(texto, xy=(2.0, v_foto[i][-1]),
+                    xytext=(2.1, v_foto[i][-1]), fontsize=14,
+                    verticalalignment='center')
+
+        ax.set_ylim([0.0, 22.0])
+        ax.set_xlim([0.70, 2.90])
+
+        ax.set_xlabel(r'Potencial de frenado (V)')
+        ax.set_ylabel(r'Fotocorriente $\propto$ V ($\mu$V)')
+
+    return pendientes
+
+
+def plot_espectros_corregidos(s, ax=None, plot_sensibilidad=True):
+
+    if ax is None:
+        fig, ax = plt.subplots(1)
+
+    if plot_sensibilidad:
+        ax.plot(long_onda, s * 0.15, color='k')
+
+    areas = list()
+
+    for i in range(5):
+        ax.plot(long_onda, intensidad[i], ls=':', color='k', lw=0.5)
+        h = intensidad[i] * s
+        h = h * (h > 0)
+        ax.plot(long_onda, h)
+        areas.append(np.trapz(h))
+
+    ax.set_xlabel(r'Long. de onda ($nm$)')
+    ax.set_ylabel(r'Intensidad')
+
+    return areas
+
+
+# PROGRAMA PRINCIPAL
+
+if __name__ == "__main__":
+    fig, ax = plt.subplots(2)
+    plot_pendientes(ax=ax[0])
+    s = sensibilidad(long_onda, inicio=300, fin=650)
+    plot_espectros_corregidos(s, ax=ax[1])
