@@ -80,7 +80,7 @@ def sensibilidad(long_onda, inicio=300, fin=700,
     return s(x)
 
 
-def plot_pendientes(ax=None):
+def plot_pendientes(ax=None, xmin=1.0, xmax=np.inf):
 
     if ax is None:
         fig, ax = plt.subplots(1)
@@ -89,7 +89,7 @@ def plot_pendientes(ax=None):
 
     for i in range(5):
         ax.plot(v_ret, v_foto[i], ls='', marker='o')
-        recta = ajuste(v_ret, v_foto[i], xmin=1.6, xmax=np.inf, grado=1)
+        recta = ajuste(v_ret, v_foto[i], xmin=xmin, xmax=xmax, grado=1)
         ax.plot(v_ret, recta(v_ret), color='k', ls=':')
         pendientes.append(recta[1])
 
@@ -104,7 +104,7 @@ def plot_pendientes(ax=None):
         ax.set_xlabel(r'Potencial de frenado (V)')
         ax.set_ylabel(r'Fotocorriente $\propto$ V ($\mu$V)')
 
-    return pendientes
+    return pendientes / pendientes[1]
 
 
 def plot_espectros_corregidos(s, ax=None, plot_sensibilidad=True):
@@ -127,7 +127,25 @@ def plot_espectros_corregidos(s, ax=None, plot_sensibilidad=True):
     ax.set_xlabel(r'Long. de onda ($nm$)')
     ax.set_ylabel(r'Intensidad')
 
-    return areas
+    return areas / areas[1]
+
+
+def areas(long_onda, inicio, fin):
+    areas = list()
+    s = sensibilidad(long_onda, inicio=inicio, fin=fin)
+    for i in range(5):
+        h = intensidad[i] * s
+        h = h * (h > 0)
+        areas.append(np.trapz(h))
+
+    return areas / areas[1]
+
+
+def ajuste_sensibilidad(x0=1.0):
+    pendientes = plot_pendientes(xmin=x0)
+    popt, cov = curve_fit(areas, long_onda, pendientes, p0=[300, 700],
+                          bounds=([100, 350], [550, 700]))
+    return popt, pendientes, areas(long_onda, *popt)
 
 
 # PROGRAMA PRINCIPAL
