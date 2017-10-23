@@ -152,6 +152,7 @@ def ajuste_sensibilidad(x0=1.0):
 
 if __name__ == "__main__":
     fig, ax = plt.subplots(2)
-    plot_pendientes(ax=ax[0])
-    s = sensibilidad(long_onda, inicio=300, fin=650)
+    popt, pendientes, areas = ajuste_sensibilidad(x0=1.0)
+    plot_pendientes(xmin=1.0, ax=ax[0])
+    s = sensibilidad(long_onda, inicio=popt[0], fin=popt[1])
     plot_espectros_corregidos(s, ax=ax[1])
