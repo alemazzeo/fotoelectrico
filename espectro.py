@@ -56,7 +56,7 @@ def ajuste(x, y, xmin, xmax, grado=3):
 
 
 def sensibilidad(long_onda, inicio=300, fin=700,
-                 smooth=0.001, plot=False):
+                 smooth=0.001, plot=False, ax=None):
     puntos = np.asarray([[300, 0.08], [320, 0.24], [330, 0.60],
                          [340, 0.76], [352, 0.88], [370, 0.94],
                          [405, 1.00], [440, 0.94], [460, 0.88],
@@ -73,9 +73,10 @@ def sensibilidad(long_onda, inicio=300, fin=700,
     x = np.linspace(a, b, len(long_onda))
 
     if plot:
-        fig, ax = plt.subplots(1)
-        ax.plot(puntos.T[0], puntos.T[1], 'o')
-        ax.plot(x, s(x))
+        if ax is None:
+            fig, ax = plt.subplots(1)
+        #ax.plot(puntos.T[0], puntos.T[1], 'o')
+        #ax.plot(x, s(x))
         ax.plot(long_onda, s(x), 'k')
 
     return s(x)
@@ -113,7 +114,7 @@ def plot_pendientes(ax=None, xmin=1.0, xmax=np.inf):
         ax.axvline(xmin, ls=':')
         ax.axvline(2.0, ls=':')
 
-    return pendientes / pendientes[1]
+    return pendientes
 
 
 def plot_espectros_corregidos(s, ax=None, plot_sensibilidad=True,
@@ -139,7 +140,7 @@ def plot_espectros_corregidos(s, ax=None, plot_sensibilidad=True,
     ax.set_ylabel('Intensidad (u.a)\n')
     ax.set_yticks([])
 
-    return areas / areas[1]
+    return areas
 
 
 def areas(long_onda, inicio, fin):
@@ -199,7 +200,7 @@ if __name__ == "__main__":
                        horizontalalignment='center')
 
         ax[1].set_xlabel(r'Long. de onda ($nm$)')
-        ax[1].set_ylabel('Intensidad (u.a)\n')
+        ax[1].set_ylabel('Intensidad (u.a)')
 
         ax[1].set_ylim([0.0, 0.15])
         ax[1].set_xlim([400, 700])
@@ -208,7 +209,7 @@ if __name__ == "__main__":
 
     # Figura de pendientes
     fig, ax = plt.subplots(1)
-    plot_pendientes(xmin=1.0, ax=ax)
+    p = plot_pendientes(xmin=1.0, ax=ax)
 
     # Figura de espectros corregidos sin ajustar
     fig, ax = plt.subplots(1)
@@ -223,9 +224,9 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(1)
     popt, pendientes, areas = ajuste_sensibilidad(x0=1.0)
     s = sensibilidad(long_onda, inicio=popt[0], fin=popt[1])
-    plot_espectros_corregidos(s, ax=ax, plot_old=False, ls_sens='-')
-    plot_espectros_corregidos(sensibilidad(long_onda), ax=ax, plot_old=False,
-                              ls_sens='--', ls=':', color='k', lw=0.5)
+    a1 = plot_espectros_corregidos(s, ax=ax, plot_old=False, ls_sens='-')
+    a2 = plot_espectros_corregidos(sensibilidad(long_onda), ax=ax, plot_old=False,
+                                   ls_sens='--', ls=':', color='k', lw=0.5)
     old_sens_line = mlines.Line2D([], [], ls='--', color='k')
     old_espec_line = mlines.Line2D([], [], ls=':', color='k', lw=0.5)
     new_sens_line = mlines.Line2D([], [], ls='-', color='k')
@@ -236,3 +237,34 @@ if __name__ == "__main__":
               loc='best', framealpha=1)
 
     ax.set_ylim([0.0, 0.07])
+
+    # Figura de relacion pendiente vs areas
+    fig, ax = plt.subplots(2, 2, sharey='row')
+    fig.subplots_adjust(left=0.16, right=0.94, top=0.95, bottom=0.10,
+                        hspace=0.40, wspace=0.2)
+
+    sensibilidad(long_onda, inicio=300, fin=700,
+                 plot=True, ax=ax[0][0])
+    sensibilidad(long_onda, inicio=popt[0], fin=popt[1],
+                 plot=True, ax=ax[0][1])
+    ax[1][0].plot(p, a2, 'bo')
+    ax[1][1].plot(p, a1, 'go')
+
+    ax[0][0].set_xlabel(r'Long. de onda ($nm$)')
+    ax[0][1].set_xlabel(r'Long. de onda ($nm$)')
+    ax[0][0].set_ylabel('Sensibilidad (u.a)\n')
+
+    ax[1][0].set_xlabel(r'Pendiente')
+    ax[1][1].set_xlabel(r'Pendiente')
+    ax[1][0].set_ylabel('Area')
+
+    orden = np.argsort(p)
+    p = p[orden]
+    p = np.asarray(p[orden])
+    a1 = np.asarray(a1[orden])
+    a2 = np.asarray(a2[orden])
+
+    recta1 = np.polyfit(p, a2, deg=1)
+    recta2 = np.polyfit(p, a1, deg=1)
+
+    ax[1][0].plot(p, p * recta1[1] + recta1[0])
