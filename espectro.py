@@ -56,7 +56,7 @@ def ajuste(x, y, xmin, xmax, grado=3):
 
 
 def sensibilidad(long_onda, inicio=300, fin=700,
-                 smooth=0.001, plot=False, ax=None):
+                 smooth=0.001, plot=False, ax=None, ls_sens='--'):
     puntos = np.asarray([[300, 0.08], [320, 0.24], [330, 0.60],
                          [340, 0.76], [352, 0.88], [370, 0.94],
                          [405, 1.00], [440, 0.94], [460, 0.88],
@@ -75,9 +75,7 @@ def sensibilidad(long_onda, inicio=300, fin=700,
     if plot:
         if ax is None:
             fig, ax = plt.subplots(1)
-        #ax.plot(puntos.T[0], puntos.T[1], 'o')
-        #ax.plot(x, s(x))
-        ax.plot(long_onda, s(x), 'k')
+        ax.plot(long_onda, s(x), 'k', ls=ls_sens)
 
     return s(x)
 
@@ -214,7 +212,7 @@ if __name__ == "__main__":
     # Figura de espectros corregidos sin ajustar
     fig, ax = plt.subplots(1)
     plot_espectros_corregidos(sensibilidad(long_onda), ax=ax, ls_sens='--')
-    old_espec_line = mlines.Line2D([], [], ls=':', color='k', lw=0.5)
+    old_espec_line = mlines.Line2D([], [], ls='-', color='k', lw=0.5)
     sens_line = mlines.Line2D([], [], ls='--', color='k')
     ax.legend([sens_line, old_espec_line],
               ['Sensibilidad tabulada', 'Espectro original'],
@@ -228,7 +226,7 @@ if __name__ == "__main__":
     a2 = plot_espectros_corregidos(sensibilidad(long_onda), ax=ax, plot_old=False,
                                    ls_sens='--', ls=':', color='k', lw=0.5)
     old_sens_line = mlines.Line2D([], [], ls='--', color='k')
-    old_espec_line = mlines.Line2D([], [], ls=':', color='k', lw=0.5)
+    old_espec_line = mlines.Line2D([], [], ls='-', color='k', lw=0.5)
     new_sens_line = mlines.Line2D([], [], ls='-', color='k')
     ax.legend([old_sens_line, old_espec_line, new_sens_line],
               ['Sensibilidad tabulada',
@@ -244,27 +242,46 @@ if __name__ == "__main__":
                         hspace=0.40, wspace=0.2)
 
     sensibilidad(long_onda, inicio=300, fin=700,
-                 plot=True, ax=ax[0][0])
+                 plot=True, ax=ax[0][0], ls_sens='--')
     sensibilidad(long_onda, inicio=popt[0], fin=popt[1],
-                 plot=True, ax=ax[0][1])
-    ax[1][0].plot(p, a2, 'bo')
-    ax[1][1].plot(p, a1, 'go')
+                 plot=True, ax=ax[0][1], ls_sens='-')
+    ax[1][0].plot(p, a2, 'ko', mfc='white')
+    ax[1][1].plot(p, a1, 'ko', mfc='white')
 
     ax[0][0].set_xlabel(r'Long. de onda ($nm$)')
     ax[0][1].set_xlabel(r'Long. de onda ($nm$)')
-    ax[0][0].set_ylabel('Sensibilidad (u.a)\n')
+    ax[0][0].set_ylabel('Sensibilidad (u.a)')
 
     ax[1][0].set_xlabel(r'Pendiente')
     ax[1][1].set_xlabel(r'Pendiente')
-    ax[1][0].set_ylabel('Area')
+    ax[1][0].set_ylabel('Área')
 
-    orden = np.argsort(p)
+    p = np.asarray(p)
+    orden = p.argsort()
     p = p[orden]
-    p = np.asarray(p[orden])
-    a1 = np.asarray(a1[orden])
-    a2 = np.asarray(a2[orden])
+    a1 = np.asarray(a1)[orden]
+    a2 = np.asarray(a2)[orden]
 
     recta1 = np.polyfit(p, a2, deg=1)
     recta2 = np.polyfit(p, a1, deg=1)
 
-    ax[1][0].plot(p, p * recta1[1] + recta1[0])
+    ax[1][0].plot(p, p * recta1[0] + recta1[1], 'k', ls='--')
+    ax[1][1].plot(p, p * recta2[0] + recta2[1], 'k', ls='-')
+
+    letras = ['E', 'C', 'D', 'A', 'B']
+    for i in range(5):
+        ax[1][0].annotate(letras[i], xy=(p[i], a2[i]),
+                          xytext=(p[i], a2[i] - 1.5), fontsize=14,
+                          horizontalalignment='center')
+        ax[1][1].annotate(letras[i], xy=(p[i], a1[i]),
+                          xytext=(p[i], a1[i] + 0.5), fontsize=14,
+                          horizontalalignment='center')
+
+    old_sens_line = mlines.Line2D([], [], ls='--', color='k')
+    new_sens_line = mlines.Line2D([], [], ls='-', color='k')
+    ax[0][0].legend([old_sens_line, ],
+                    ['S. tabulada', ],
+                    loc='best', framealpha=1)
+    ax[0][1].legend([new_sens_line, ],
+                    ['S. ajustada', ],
+                    loc='best', framealpha=1)
